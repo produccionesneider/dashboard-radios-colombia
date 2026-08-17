@@ -465,12 +465,36 @@ export default function DashboardLayout() {
     }
   }
 
-  // Carga de Imagen para Perfil Administrador
-  const handleAvatarFileUpload = (e) => {
+  // Carga de Imagen para Perfil Administrador y subida a Supabase
+  const handleAvatarFileUpload = async (e) => {
     const file = e.target.files[0]
     if (file) {
-      const previewUrl = URL.createObjectURL(file)
-      setProfileForm((prev) => ({ ...prev, avatar: previewUrl }))
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+      const filePath = `${fileName}`
+
+      setStatusFeedback('Subiendo foto de perfil a Supabase...')
+
+      const { error } = await supabase.storage
+        .from('image-perfil')
+        .upload(filePath, file)
+
+      if (error) {
+        console.error('Error subiendo foto de perfil:', error)
+        setStatusFeedback('⚠️ Error subiendo la foto de perfil.')
+        setTimeout(() => setStatusFeedback(''), 4000)
+        return
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('image-perfil')
+        .getPublicUrl(filePath)
+
+      if (publicUrlData) {
+        setProfileForm((prev) => ({ ...prev, avatar: publicUrlData.publicUrl }))
+        setStatusFeedback('Foto de perfil actualizada correctamente.')
+        setTimeout(() => setStatusFeedback(''), 3000)
+      }
     }
   }
 
