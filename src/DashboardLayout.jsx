@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import BeautifulPlayer from './BeautifulPlayer'
 import { 
   Radio, 
   Search, 
@@ -32,7 +33,8 @@ import {
   Camera,
   UserPlus,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  Maximize2
 } from 'lucide-react'
 
 // Componentes Vectoriales de Redes Sociales Unicolor Estilo iOS
@@ -167,6 +169,7 @@ export default function DashboardLayout() {
   const [statusFeedback, setStatusFeedback] = useState('')
 
   // Estado del Perfil Administrador
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false)
   const [profile, setProfile] = useState({
     name: 'Neider Administrador',
     role: 'Producciones Neider',
@@ -1404,11 +1407,13 @@ export default function DashboardLayout() {
                             className="flex-1 px-3.5 py-2.5 rounded-lg bg-dark-bg border border-gray-800 text-xs text-white placeholder-gray-500 focus:border-brand-blue outline-none"
                           />
                           {(logoPreview || form.logoUrl) && (
-                            <img 
-                              src={logoPreview || form.logoUrl} 
-                              alt="Vista previa" 
-                              className="w-10 h-10 rounded-lg object-cover border border-brand-blue/50 shrink-0" 
-                            />
+                            <div className="w-10 h-10 rounded-lg shrink-0 overflow-hidden border border-brand-blue/50 flex items-center justify-center p-1" style={{ backgroundColor: form.bgColor || '#1E1E1E' }}>
+                              <img 
+                                src={logoPreview || form.logoUrl} 
+                                alt="Vista previa" 
+                                className="max-w-full max-h-full object-contain" 
+                              />
+                            </div>
                           )}
                         </div>
 
@@ -1693,11 +1698,11 @@ export default function DashboardLayout() {
                                   </div>
 
                                   {/* Logo de la Emisora (Centrado Absoluto) */}
-                                  <div className="aspect-video w-full rounded-xl bg-black/40 border border-white/10 flex items-center justify-center mb-4 overflow-hidden relative p-3">
+                                  <div className="aspect-video w-full rounded-xl flex items-center justify-center mb-4 overflow-hidden relative">
                                     {station.logo ? (
-                                      <img src={station.logo} alt={station.name} className="max-w-full max-h-full object-contain mx-auto my-auto drop-shadow-md" />
+                                      <img src={station.logo} alt={station.name} className="max-w-full max-h-full object-contain mx-auto my-auto drop-shadow-lg" />
                                     ) : (
-                                      <div className="text-center text-gray-400 p-4">
+                                      <div className="text-center text-white/50 p-4">
                                         <Radio size={36} strokeWidth={2} className="mx-auto mb-1 opacity-50" />
                                         <span className="text-[11px] font-medium">Radios Colombia</span>
                                       </div>
@@ -1719,9 +1724,9 @@ export default function DashboardLayout() {
                                   </div>
 
                                   {/* Descripción */}
-                                  <p className="text-xs text-gray-300 mt-3 line-clamp-3 bg-black/25 p-2.5 rounded-lg border border-white/5 leading-relaxed">
+                                  <div className="mt-3 text-[11px] text-white/90 leading-relaxed font-light line-clamp-2">
                                     {station.description || 'Emisora colombiana transmitiendo en vivo.'}
-                                  </p>
+                                  </div>
 
                                   {/* Redes Sociales & Contacto (Familia Unicolor Minimalista iOS) */}
                                   <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center gap-1.5">
@@ -1761,7 +1766,16 @@ export default function DashboardLayout() {
                                 {/* Botón de Escuchar Transmisión */}
                                 <div className="mt-4 pt-3 border-t border-white/10">
                                   <button
-                                    onClick={() => togglePlayStation(station)}
+                                    onClick={() => {
+                                      if (currentStation?.id !== station.id) {
+                                        setCurrentStation(station)
+                                        setIsPlaying(true)
+                                        setTimeout(() => {
+                                          audioRef.current?.play().catch((err) => console.log('Audio play error:', err))
+                                        }, 100)
+                                      }
+                                      setIsPlayerModalOpen(true)
+                                    }}
                                     className="w-full py-2.5 bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
                                   >
                                     <Play size={14} strokeWidth={2} fill="currentColor" />
@@ -1936,7 +1950,7 @@ export default function DashboardLayout() {
                         <Radio size={40} strokeWidth={2} className="mx-auto text-gray-600" />
                         <h3 className="text-base font-bold text-white">No hay emisoras en {selectedEditarDept}</h3>
                         <p className="text-xs text-gray-400 max-w-md mx-auto">
-                          Aún no se han registrado emisoras para editar en este departamento.
+                          Aún no hay emisoras registradas para editar en este departamento.
                         </p>
                       </div>
                     )}
@@ -2319,16 +2333,38 @@ export default function DashboardLayout() {
               type="range"
               min="0"
               max="1"
-              step="0.05"
+              step="0.01"
               value={isMuted ? 0 : volume}
               onChange={(e) => {
                 setVolume(parseFloat(e.target.value))
-                setIsMuted(false)
+                if (isMuted && parseFloat(e.target.value) > 0) {
+                  setIsMuted(false)
+                }
               }}
-              className="w-20 accent-brand-blue bg-dark-bg rounded-lg cursor-pointer h-1.5"
+              className="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-brand-blue [&::-webkit-slider-thumb]:rounded-full"
             />
+            <button 
+              onClick={() => setIsPlayerModalOpen(true)}
+              className="w-8 h-8 ml-2 flex items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+              title="Expandir Reproductor"
+            >
+              <Maximize2 size={16} />
+            </button>
           </div>
         </div>
+      )}
+
+      {isPlayerModalOpen && currentStation && (
+        <BeautifulPlayer 
+          station={currentStation}
+          isPlaying={isPlaying}
+          togglePlay={togglePlayStation}
+          volume={volume}
+          setVolume={setVolume}
+          isMuted={isMuted}
+          toggleMute={() => setIsMuted(!isMuted)}
+          onClose={() => setIsPlayerModalOpen(false)}
+        />
       )}
 
       {/* MODAL DE EDICIÓN DE PERFIL DE ADMINISTRADOR */}
@@ -2589,7 +2625,9 @@ export default function DashboardLayout() {
                       className="flex-1 px-3 py-2 rounded-lg bg-dark-bg border border-gray-800 text-xs text-white outline-none focus:border-brand-blue"
                     />
                     {editForm.logoUrl && (
-                      <img src={editForm.logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-cover border border-brand-blue shrink-0" />
+                      <div className="w-9 h-9 rounded-lg shrink-0 overflow-hidden border border-brand-blue flex items-center justify-center p-1" style={{ backgroundColor: editForm.bgColor || '#1E1E1E' }}>
+                        <img src={editForm.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                      </div>
                     )}
                   </div>
                   <label className="flex items-center justify-center gap-2 py-1.5 px-3 bg-dark-bg hover:bg-gray-800 border border-gray-700 rounded-lg text-xs font-medium text-gray-300 cursor-pointer transition-colors">
