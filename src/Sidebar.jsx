@@ -5,7 +5,8 @@ import {
   BarChart3, 
   AlertTriangle, 
   Settings, 
-  LogOut 
+  LogOut,
+  Star
 } from 'lucide-react'
 import { supabase } from './supabaseClient'
 
@@ -15,6 +16,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
     { id: 'directorio', label: 'Directorio', icon: Radio },
     { id: 'agregar', label: 'Agregar Emisora', icon: PlusCircle },
     { id: 'estadisticas', label: 'Estadísticas', icon: BarChart3 },
+    { id: 'calificaciones', label: 'Calificaciones', icon: Star },
     { id: 'logs', label: 'Registro Errores', icon: AlertTriangle },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
   ]

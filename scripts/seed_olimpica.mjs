@@ -41,6 +41,7 @@ const estaciones = [
   { nombre: 'Olímpica Stereo Cúcuta',        departamento: 'Norte de Santander', ciudad: 'Cúcuta',        frecuencia: '90.3 FM'  },
   { nombre: 'Olímpica Stereo Montería',      departamento: 'Córdoba',            ciudad: 'Montería',      frecuencia: '95.3 FM'  },
   { nombre: 'Olímpica Stereo Valledupar',    departamento: 'Cesar',              ciudad: 'Valledupar',    frecuencia: '99.9 FM'  },
+  { nombre: 'Olímpica Stereo Aguachica',     departamento: 'Cesar',              ciudad: 'Aguachica',     frecuencia: '101.7 FM' },
   { nombre: 'Olímpica Stereo Villavicencio', departamento: 'Meta',               ciudad: 'Villavicencio', frecuencia: '93.3 FM'  },
   { nombre: 'Olímpica Stereo Ibagué',        departamento: 'Tolima',             ciudad: 'Ibagué',        frecuencia: '97.3 FM'  },
   { nombre: 'Olímpica Stereo Armenia',       departamento: 'Quindío',            ciudad: 'Armenia',       frecuencia: '91.9 FM'  },
@@ -65,7 +66,7 @@ const registros = estaciones.map(e => ({
   twitter: '',
   tiktok: '',
   youtube: '',
-  activa: true,
+  activa: e.ciudad === 'Aguachica',
 }))
 
 // ─── PASO 3: Insertar ──────────────────────────────────────
