@@ -1888,7 +1888,7 @@ export default function DashboardLayout() {
                 <div>
                   <h2 className="text-xl font-bold text-white tracking-tight">Calificaciones de Usuarios</h2>
                   <p className="text-xs text-gray-400 mt-1">
-                    Revisa las calificaciones y comentarios enviados desde la aplicación.
+                    Revisa las calificaciones enviadas desde la aplicación.
                   </p>
                 </div>
                 
@@ -1898,7 +1898,7 @@ export default function DashboardLayout() {
                   </div>
                 ) : calificaciones.length === 0 ? (
                   <div className="bg-dark-card border border-gray-800 rounded-xl p-8 text-center">
-                    <p className="text-gray-400 text-sm">No hay calificaciones registradas aún o la tabla no existe en Supabase.</p>
+                    <p className="text-gray-400 text-sm">No hay calificaciones registradas aún.</p>
                   </div>
                 ) : (
                   <div className="bg-dark-card border border-gray-800 rounded-xl overflow-hidden">
@@ -1909,7 +1909,6 @@ export default function DashboardLayout() {
                             <th className="px-4 py-3">Fecha</th>
                             <th className="px-4 py-3">Emisora</th>
                             <th className="px-4 py-3">Calificación</th>
-                            <th className="px-4 py-3">Comentario</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800">
@@ -1925,9 +1924,6 @@ export default function DashboardLayout() {
                                 <div className="flex items-center gap-1 text-yellow-500">
                                   {item.rating || item.calificacion || item.estrellas || item.stars || 'N/A'} <Star size={14} fill="currentColor" />
                                 </div>
-                              </td>
-                              <td className="px-4 py-3 text-gray-400 max-w-xs truncate">
-                                {item.comentario || item.comment || item.mensaje || '-'}
                               </td>
                             </tr>
                           ))}
