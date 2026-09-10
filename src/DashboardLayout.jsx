@@ -36,6 +36,8 @@ import {
   ShieldCheck,
   Maximize2,
   Star
+  Megaphone,
+  ImageIcon,
 } from 'lucide-react'
 
 // Utilidades para formatear URLs y WhatsApp
@@ -1958,11 +1960,11 @@ export default function DashboardLayout() {
                                return {
                                    ...stat,
                                    average: parseFloat(average),
-                                   name: stationData.name || stationData.nombre || stat.id || 'Emisora Desconocida',
-                                   logo: stationData.logo || stationData.logo_url || null,
-                                   bgColor: stationData.color_fondo || '#1f2937',
-                                   freq: stationData.frecuencia || '',
-                                   city: stationData.ciudad || '',
+                                   name: stationData.name || stat.id || 'Emisora Desconocida',
+                                   logo: stationData.logo || null,
+                                   bgColor: stationData.bgColor || '#1f2937',
+                                   freq: stationData.freq || '',
+                                   city: stationData.city || '',
                                };
                             }).sort((a, b) => b.average - a.average);
 
