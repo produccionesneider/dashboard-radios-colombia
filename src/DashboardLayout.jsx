@@ -1921,27 +1921,74 @@ export default function DashboardLayout() {
                       <table className="w-full text-left text-sm text-gray-300">
                         <thead className="bg-gray-900/50 text-xs uppercase font-semibold text-gray-400 border-b border-gray-800">
                           <tr>
-                            <th className="px-4 py-3">Fecha</th>
+                            <th className="px-4 py-3 text-center w-16">Posición</th>
                             <th className="px-4 py-3">Emisora</th>
-                            <th className="px-4 py-3">Calificación</th>
+                            <th className="px-4 py-3 text-center">Calificación</th>
+                            <th className="px-4 py-3 text-center">Votos Totales</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800">
-                          {calificaciones.map((item, idx) => (
-                            <tr key={item.id || idx} className="hover:bg-gray-800/20 transition-colors">
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 font-medium text-white">
-                                {item.emisora_id || item.emisora || item.station_id || item.nombre_emisora || 'Desconocida'}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-1 text-yellow-500">
-                                  {item.rating || item.calificacion || item.estrellas || item.stars || 'N/A'} <Star size={14} fill="currentColor" />
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                          {(() => {
+                            // Agrupar calificaciones por emisora
+                            const statsByStation = {};
+                            calificaciones.forEach(c => {
+                               const id = c.emisora_id || c.station_id || c.emisora || c.id_emisora;
+                               
+                               // Extraer la calificación desde cualquier columna que pueda llamarse así
+                               let score = Number(c.rating || c.calificacion || c.estrellas || c.stars || c.puntuacion || c.valor || c.score || c.nota || 0);
+                               
+                               // Si no encontramos un score válido, extraemos la primera key que sea un número (fallback extremo)
+                               if (score === 0) {
+                                 const potentialScores = Object.values(c).filter(v => typeof v === 'number' && v > 0 && v <= 5);
+                                 if (potentialScores.length > 0) score = potentialScores[0];
+                               }
+
+                               if (!statsByStation[id]) {
+                                   statsByStation[id] = { totalScore: 0, count: 0, id: id };
+                               }
+                               if(score > 0) {
+                                  statsByStation[id].totalScore += score;
+                                  statsByStation[id].count += 1;
+                               }
+                            });
+
+                            const leaderboard = Object.values(statsByStation).map(stat => {
+                               const average = stat.count > 0 ? (stat.totalScore / stat.count).toFixed(1) : 0;
+                               const stationData = stations.find(s => s.id === stat.id) || {};
+                               return {
+                                   ...stat,
+                                   average: parseFloat(average),
+                                   name: stationData.name || stationData.nombre || stat.id || 'Emisora Desconocida',
+                                   logo: stationData.logo || stationData.logo_url || null,
+                               };
+                            }).sort((a, b) => b.average - a.average);
+
+                            return leaderboard.map((item, idx) => (
+                              <tr key={item.id || idx} className="hover:bg-gray-800/20 transition-colors">
+                                <td className="px-4 py-3 text-center font-bold text-lg text-gray-500">
+                                  #{idx + 1}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    {item.logo ? (
+                                      <img src={item.logo} alt={item.name} className="w-8 h-8 rounded-full object-cover bg-gray-800" />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs">📻</div>
+                                    )}
+                                    <div className="font-medium text-white">{item.name}</div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center justify-center gap-1.5 font-bold text-yellow-500 text-base">
+                                    {item.average > 0 ? item.average : 'N/A'} <Star size={16} fill="currentColor" />
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-400">
+                                  {item.count} {item.count === 1 ? 'voto' : 'votos'}
+                                </td>
+                              </tr>
+                            ));
+                          })()}
                         </tbody>
                       </table>
                     </div>
