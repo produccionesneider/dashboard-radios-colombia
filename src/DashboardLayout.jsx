@@ -34,7 +34,8 @@ import {
   UserPlus,
   Users,
   ShieldCheck,
-  Maximize2
+  Maximize2,
+  Star
 } from 'lucide-react'
 
 // Utilidades para formatear URLs y WhatsApp
@@ -230,6 +231,25 @@ export default function DashboardLayout() {
   })
 
   const [formSubmitting, setFormSubmitting] = useState(false)
+
+  // Calificaciones State
+  const [calificaciones, setCalificaciones] = useState([])
+  const [loadingCalificaciones, setLoadingCalificaciones] = useState(false)
+
+  const fetchCalificaciones = async () => {
+    setLoadingCalificaciones(true)
+    const { data, error } = await supabase.from('calificaciones').select('*').order('created_at', { ascending: false }).limit(100)
+    if (!error && data) {
+      setCalificaciones(data)
+    }
+    setLoadingCalificaciones(false)
+  }
+
+  useEffect(() => {
+    if (activeTab === 'calificaciones') {
+      fetchCalificaciones()
+    }
+  }, [activeTab])
   const [logoPreview, setLogoPreview] = useState('')
   const [customCity, setCustomCity] = useState('')
   const [selectedDepartmentView, setSelectedDepartmentView] = useState(null)
@@ -884,6 +904,19 @@ export default function DashboardLayout() {
                   <PlusCircle size={19} strokeWidth={2} />
                 </div>
                 {!isSidebarCollapsed && <span className="truncate">Agregar Emisora</span>}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('calificaciones')}
+                className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-xs font-semibold transition-colors justify-start ${
+                  activeTab === 'calificaciones' ? 'bg-brand-blue text-white shadow-md' : 'text-gray-400 hover:text-slate-200 hover:bg-gray-800/60'
+                }`}
+                title="Calificaciones"
+              >
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Star size={19} strokeWidth={2} />
+                </div>
+                {!isSidebarCollapsed && <span className="truncate">Calificaciones</span>}
               </button>
 
               <button
@@ -1853,16 +1886,56 @@ export default function DashboardLayout() {
             {activeTab === 'calificaciones' && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Calificaciones</h2>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Calificaciones de Usuarios</h2>
                   <p className="text-xs text-gray-400 mt-1">
-                    Gestiona las calificaciones, comentarios y reportes de las emisoras.
+                    Revisa las calificaciones y comentarios enviados desde la aplicación.
                   </p>
                 </div>
-                <div className="bg-dark-card border border-gray-800 rounded-xl p-6">
-                  <p className="text-gray-400 text-sm">
-                    Aquí se mostrarán las calificaciones.
-                  </p>
-                </div>
+                
+                {loadingCalificaciones ? (
+                  <div className="text-center py-10">
+                    <p className="text-gray-400">Cargando calificaciones...</p>
+                  </div>
+                ) : calificaciones.length === 0 ? (
+                  <div className="bg-dark-card border border-gray-800 rounded-xl p-8 text-center">
+                    <p className="text-gray-400 text-sm">No hay calificaciones registradas aún o la tabla no existe en Supabase.</p>
+                  </div>
+                ) : (
+                  <div className="bg-dark-card border border-gray-800 rounded-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-gray-300">
+                        <thead className="bg-gray-900/50 text-xs uppercase font-semibold text-gray-400 border-b border-gray-800">
+                          <tr>
+                            <th className="px-4 py-3">Fecha</th>
+                            <th className="px-4 py-3">Emisora</th>
+                            <th className="px-4 py-3">Calificación</th>
+                            <th className="px-4 py-3">Comentario</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800">
+                          {calificaciones.map((item, idx) => (
+                            <tr key={item.id || idx} className="hover:bg-gray-800/20 transition-colors">
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-white">
+                                {item.emisora_id || item.emisora || item.station_id || item.nombre_emisora || 'Desconocida'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1 text-yellow-500">
+                                  {item.rating || item.calificacion || item.estrellas || item.stars || 'N/A'} <Star size={14} fill="currentColor" />
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-gray-400 max-w-xs truncate">
+                                {item.comentario || item.comment || item.mensaje || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
