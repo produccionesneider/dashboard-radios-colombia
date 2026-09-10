@@ -1960,6 +1960,9 @@ export default function DashboardLayout() {
                                    average: parseFloat(average),
                                    name: stationData.name || stationData.nombre || stat.id || 'Emisora Desconocida',
                                    logo: stationData.logo || stationData.logo_url || null,
+                                   bgColor: stationData.color_fondo || '#1f2937',
+                                   freq: stationData.frecuencia || '',
+                                   city: stationData.ciudad || '',
                                };
                             }).sort((a, b) => b.average - a.average);
 
@@ -1970,12 +1973,24 @@ export default function DashboardLayout() {
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-                                    {item.logo ? (
-                                      <img src={item.logo} alt={item.name} className="w-8 h-8 rounded-full object-cover bg-gray-800" />
-                                    ) : (
-                                      <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs">📻</div>
-                                    )}
-                                    <div className="font-medium text-white">{item.name}</div>
+                                    <div 
+                                      className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden shrink-0 shadow-sm"
+                                      style={{ backgroundColor: item.bgColor }}
+                                    >
+                                      {item.logo ? (
+                                        <img src={item.logo} alt={item.name} className="w-full h-full object-contain p-1" />
+                                      ) : (
+                                        <span className="text-xl">📻</span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <div className="font-bold text-white text-base">{item.name}</div>
+                                      {(item.freq || item.city) && (
+                                        <div className="text-xs text-gray-400 mt-0.5">
+                                          {item.freq} {item.freq && item.city && '•'} {item.city}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
