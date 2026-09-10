@@ -35,7 +35,7 @@ import {
   Users,
   ShieldCheck,
   Maximize2,
-  Star
+  Star,
   Megaphone,
   ImageIcon,
 } from 'lucide-react'
