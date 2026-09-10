@@ -236,10 +236,19 @@ export default function DashboardLayout() {
   const [calificaciones, setCalificaciones] = useState([])
   const [loadingCalificaciones, setLoadingCalificaciones] = useState(false)
 
+  const [errorCalificaciones, setErrorCalificaciones] = useState(null)
+
   const fetchCalificaciones = async () => {
     setLoadingCalificaciones(true)
-    const { data, error } = await supabase.from('calificaciones').select('*').order('created_at', { ascending: false }).limit(100)
-    if (!error && data) {
+    setErrorCalificaciones(null)
+    
+    // Quitamos temporalmente el .order('created_at') por si la tabla no tiene esa columna
+    const { data, error } = await supabase.from('calificaciones').select('*').limit(100)
+    
+    if (error) {
+      console.error('Error fetching calificaciones:', error)
+      setErrorCalificaciones(error.message)
+    } else if (data) {
       setCalificaciones(data)
     }
     setLoadingCalificaciones(false)
@@ -1895,6 +1904,12 @@ export default function DashboardLayout() {
                 {loadingCalificaciones ? (
                   <div className="text-center py-10">
                     <p className="text-gray-400">Cargando calificaciones...</p>
+                  </div>
+                ) : errorCalificaciones ? (
+                  <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-8 text-center">
+                    <p className="text-red-400 text-sm font-semibold">Error al cargar la tabla:</p>
+                    <p className="text-red-300 text-xs mt-1">{errorCalificaciones}</p>
+                    <p className="text-gray-400 text-xs mt-3">Revisa la estructura de la tabla en Supabase.</p>
                   </div>
                 ) : calificaciones.length === 0 ? (
                   <div className="bg-dark-card border border-gray-800 rounded-xl p-8 text-center">
