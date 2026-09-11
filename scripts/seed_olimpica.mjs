@@ -40,7 +40,6 @@ const estaciones = [
   { nombre: 'Olímpica Stereo Manizales',     departamento: 'Caldas',             ciudad: 'Manizales',     frecuencia: '102.9 FM' },
   { nombre: 'Olímpica Stereo Cúcuta',        departamento: 'Norte de Santander', ciudad: 'Cúcuta',        frecuencia: '90.3 FM'  },
   { nombre: 'Olímpica Stereo Montería',      departamento: 'Córdoba',            ciudad: 'Montería',      frecuencia: '95.3 FM'  },
-  { nombre: 'Olímpica Stereo Valledupar',    departamento: 'Cesar',              ciudad: 'Valledupar',    frecuencia: '99.9 FM'  },
   { nombre: 'Olímpica Stereo Aguachica',     departamento: 'Cesar',              ciudad: 'Aguachica',     frecuencia: '101.7 FM' },
   { nombre: 'Olímpica Stereo Villavicencio', departamento: 'Meta',               ciudad: 'Villavicencio', frecuencia: '93.3 FM'  },
   { nombre: 'Olímpica Stereo Ibagué',        departamento: 'Tolima',             ciudad: 'Ibagué',        frecuencia: '97.3 FM'  },
@@ -49,16 +48,20 @@ const estaciones = [
   { nombre: 'Olímpica Stereo Pasto',         departamento: 'Nariño',             ciudad: 'Pasto',         frecuencia: '91.3 FM'  },
   { nombre: 'Olímpica Stereo Sincelejo',     departamento: 'Sucre',              ciudad: 'Sincelejo',     frecuencia: '100.3 FM' },
   { nombre: 'Olímpica Stereo Popayán',       departamento: 'Cauca',              ciudad: 'Popayán',       frecuencia: '104.9 FM' },
-  { nombre: 'Olímpica Stereo Riohacha',      departamento: 'La Guajira',         ciudad: 'Riohacha',      frecuencia: '96.9 FM'  },
+  { nombre: 'Olímpica Stereo La Guajira',    departamento: 'La Guajira',         ciudad: 'La Guajira',    frecuencia: '89.5 FM'  },
 ]
 
 const registros = estaciones.map(e => ({
   ...e,
-  logo_url: logoUrl,
-  color_fondo: '#E8000E',
+  logo_url: 'https://pqfjwjrfoxzxybuzwior.supabase.co/storage/v1/object/public/logos_emisoras/1789019416442_9qtyb1f.png',
+  color_fondo: '#ff4c00',
   descripcion: `Olímpica Stereo ${e.ciudad} — La cadena radial más grande de Colombia. Música tropical, vallenato y las mejores canciones del momento.`,
   genero: 'Tropical / Vallenato',
-  stream_url: 'https://stream.zeno.fm/54c8fe3syd0uv',
+  stream_url: (e.ciudad === 'La Guajira')
+    ? 'https://stream.zeno.fm/f4ese4m5prytv'
+    : (e.ciudad === 'Aguachica' || e.ciudad === 'Valledupar') 
+      ? 'https://playerservices.streamtheworld.com/api/livestream-redirect/OLP_VALLEDUPARAAC.aac?dist=oro_web&dev=websites' 
+      : `https://playerservices.streamtheworld.com/api/livestream-redirect/OLP_${e.ciudad.toUpperCase().replace(/[^A-Z]/g, '')}AAC.aac?dist=oro_web&dev=websites`,
   sitio_web: 'https://olimpicastereo.com.co',
   whatsapp: '',
   facebook: 'https://facebook.com/olimpicastereo',
@@ -66,7 +69,7 @@ const registros = estaciones.map(e => ({
   twitter: '',
   tiktok: '',
   youtube: '',
-  activa: e.ciudad === 'Aguachica',
+  activa: (e.ciudad === 'Aguachica' || e.ciudad === 'Valledupar' || e.ciudad === 'La Guajira'),
 }))
 
 // ─── PASO 3: Insertar ──────────────────────────────────────

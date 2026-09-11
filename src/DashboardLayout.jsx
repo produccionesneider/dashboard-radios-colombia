@@ -212,6 +212,18 @@ export default function DashboardLayout() {
   })
 
   // Formulario Agregar Emisora State
+
+  // Estado para Publicidad
+  const [publicidadList, setPublicidadList] = useState([])
+  const [publicidadForm, setPublicidadForm] = useState({
+    cliente: '',
+    url_destino: '',
+    activa: true
+  })
+  const [publicidadImage, setPublicidadImage] = useState(null)
+  const [publicidadPreview, setPublicidadPreview] = useState('')
+  const [isSubmittingPublicidad, setIsSubmittingPublicidad] = useState(false)
+
   const [form, setForm] = useState({
     name: '',
     department: 'Bogotá D.C.',
@@ -350,6 +362,7 @@ export default function DashboardLayout() {
   // Cargar emisoras y perfil de administrador desde Supabase
   useEffect(() => {
     fetchStationsFromSupabase()
+    fetchPublicidadFromSupabase()
     fetchAdminProfileFromSupabase()
   }, [])
 
@@ -369,6 +382,117 @@ export default function DashboardLayout() {
       }
     } catch (err) {
       console.log('Supabase user fetch note:', err)
+    }
+  }
+
+
+  const fetchPublicidadFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase.from('publicidad').select('*').order('creado_en', { ascending: false })
+      if (error) {
+        console.log('Error fetching publicidad:', error.message)
+        return
+      }
+      setPublicidadList(data || [])
+    } catch (err) {
+      console.log('Error catch publicidad:', err)
+    }
+  }
+
+  const handlePublicidadImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setPublicidadImage(file)
+      setPublicidadPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handlePublicidadSubmit = async (e) => {
+    e.preventDefault()
+    if (!publicidadForm.cliente || (!publicidadImage && !publicidadForm.image_url)) {
+      setStatusFeedback('❌ El cliente y la imagen son obligatorios.')
+      setTimeout(() => setStatusFeedback(''), 3000)
+      return
+    }
+
+    setIsSubmittingPublicidad(true)
+    let imageUrl = publicidadForm.image_url || ''
+
+    try {
+      if (publicidadImage) {
+        setStatusFeedback('Subiendo imagen de publicidad...')
+        const fileExt = publicidadImage.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('publicidad')
+          .upload(filePath, publicidadImage)
+
+        if (uploadError) throw uploadError
+
+        const { data: publicUrlData } = supabase.storage
+          .from('publicidad')
+          .getPublicUrl(filePath)
+        
+        imageUrl = publicUrlData.publicUrl
+      }
+
+      setStatusFeedback('Guardando registro de publicidad...')
+      const newRecord = {
+        cliente: publicidadForm.cliente,
+        image_url: imageUrl,
+        url_destino: publicidadForm.url_destino,
+        activa: publicidadForm.activa
+      }
+
+      const { error: insertError } = await supabase.from('publicidad').insert([newRecord])
+      if (insertError) throw insertError
+
+      setStatusFeedback('✅ ¡Publicidad agregada con éxito!')
+      setPublicidadForm({ cliente: '', url_destino: '', activa: true })
+      setPublicidadImage(null)
+      setPublicidadPreview('')
+      
+      await fetchPublicidadFromSupabase()
+      setTimeout(() => setStatusFeedback(''), 3000)
+      setActiveTab('gestionarPublicidad')
+    } catch (err) {
+      console.error('Error submitting publicidad:', err)
+      setStatusFeedback('❌ Error al subir publicidad.')
+      setTimeout(() => setStatusFeedback(''), 3000)
+    } finally {
+      setIsSubmittingPublicidad(false)
+    }
+  }
+
+  const handleDeletePublicidad = async (id, imageUrl) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta publicidad?')) return
+
+    try {
+      if (imageUrl && imageUrl.includes('supabase.co/storage/v1/object/public/publicidad/')) {
+        const filePath = imageUrl.split('publicidad/').pop()
+        await supabase.storage.from('publicidad').remove([filePath])
+      }
+      const { error } = await supabase.from('publicidad').delete().eq('id', id)
+      if (error) throw error
+      
+      setStatusFeedback('✅ Publicidad eliminada')
+      setTimeout(() => setStatusFeedback(''), 3000)
+      fetchPublicidadFromSupabase()
+    } catch (err) {
+      console.log('Error deleting publicidad:', err)
+      setStatusFeedback('❌ Error al eliminar')
+    }
+  }
+
+  const handleTogglePublicidadActiva = async (id, currentStatus) => {
+    try {
+      const { error } = await supabase.from('publicidad').update({ activa: !currentStatus }).eq('id', id)
+      if (error) throw error
+      fetchPublicidadFromSupabase()
+    } catch (err) {
+      console.log('Error toggling publicidad:', err)
     }
   }
 
@@ -2339,6 +2463,198 @@ export default function DashboardLayout() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+
+            {/* PESTAÑA 7: AGREGAR PUBLICIDAD */}
+            {activeTab === 'agregarPublicidad' && (
+              <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <Megaphone size={22} className="text-brand-blue" />
+                    <span>Agregar Publicidad</span>
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">Sube imágenes publicitarias y configúralas para que aparezcan en el panel principal.</p>
+                </div>
+
+                <form onSubmit={handlePublicidadSubmit} className="bg-dark-card p-6 rounded-2xl border border-gray-800 space-y-5 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-blue to-purple-600"></div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Cliente / Descripción <span className="text-brand-blue">*</span></label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Ej: Coca Cola - Campaña Verano"
+                        className="w-full bg-dark-bg border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all outline-none"
+                        value={publicidadForm.cliente}
+                        onChange={(e) => setPublicidadForm({ ...publicidadForm, cliente: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">Imagen Publicitaria <span className="text-brand-blue">*</span></label>
+                      <div className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-brand-blue transition-colors group cursor-pointer relative overflow-hidden">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          onChange={handlePublicidadImageChange}
+                        />
+                        {publicidadPreview ? (
+                          <div className="flex flex-col items-center gap-3">
+                            <img src={publicidadPreview} alt="Preview" className="w-full max-h-48 object-contain rounded-lg shadow-md" />
+                            <p className="text-xs text-brand-blue font-bold group-hover:text-blue-400 transition-colors">Cambiar Imagen</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center group-hover:bg-brand-blue/20 transition-colors">
+                              <ImageIcon size={24} className="text-gray-400 group-hover:text-brand-blue transition-colors" />
+                            </div>
+                            <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">Haz clic o arrastra una imagen aquí</p>
+                            <p className="text-xs text-gray-500">JPG, PNG, GIF (Recomendado apaisado)</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wide">URL Destino (Opcional)</label>
+                      <input
+                        type="url"
+                        placeholder="https://wa.me/123456789 o https://miweb.com"
+                        className="w-full bg-dark-bg border border-gray-700/50 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-all outline-none"
+                        value={publicidadForm.url_destino}
+                        onChange={(e) => setPublicidadForm({ ...publicidadForm, url_destino: e.target.value })}
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1.5">Enlace al que irán los usuarios al hacer clic en la imagen (WhatsApp, sitio web, etc.)</p>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-4 bg-dark-bg/60 rounded-xl border border-gray-800/80">
+                      <button
+                        type="button"
+                        onClick={() => setPublicidadForm({ ...publicidadForm, activa: !publicidadForm.activa })}
+                        className={`w-12 h-6 rounded-full transition-colors relative ${publicidadForm.activa ? 'bg-brand-emerald' : 'bg-gray-700'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${publicidadForm.activa ? 'left-7' : 'left-1'}`} />
+                      </button>
+                      <div>
+                        <p className="text-sm font-bold text-white">Publicidad Activa</p>
+                        <p className="text-[10px] text-gray-400">Si está inactiva, no se mostrará en la app o web.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPublicidadForm({ cliente: '', url_destino: '', activa: true })
+                        setPublicidadImage(null)
+                        setPublicidadPreview('')
+                      }}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    >
+                      Limpiar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingPublicidad}
+                      className="px-6 py-2.5 bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition-colors flex items-center gap-2 shadow-lg shadow-brand-blue/20 disabled:opacity-50"
+                    >
+                      <Upload size={16} strokeWidth={2.5} />
+                      {isSubmittingPublicidad ? 'Guardando...' : 'Guardar Publicidad'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* PESTAÑA 8: GESTIONAR PUBLICIDAD */}
+            {activeTab === 'gestionarPublicidad' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                      <ImageIcon size={22} className="text-brand-blue" />
+                      <span>Gestionar Publicidad</span>
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Controla, edita o elimina las imágenes publicitarias.
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={() => setActiveTab('agregarPublicidad')}
+                    className="px-4 py-2 bg-dark-card border border-gray-800 hover:border-brand-blue rounded-lg text-xs font-bold text-white flex items-center gap-2 transition-colors shrink-0"
+                  >
+                    <PlusCircle size={15} />
+                    Nueva Campaña
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {publicidadList.length === 0 ? (
+                    <div className="col-span-full py-12 flex flex-col items-center justify-center text-center bg-dark-card/50 rounded-2xl border border-gray-800 border-dashed">
+                      <Megaphone size={40} className="text-gray-600 mb-4" />
+                      <h3 className="text-lg font-bold text-gray-300">No hay publicidad registrada</h3>
+                      <p className="text-sm text-gray-500 mt-1 max-w-sm">No has subido ninguna imagen publicitaria aún.</p>
+                      <button
+                        onClick={() => setActiveTab('agregarPublicidad')}
+                        className="mt-6 px-6 py-2.5 bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition-colors"
+                      >
+                        Crear la Primera Campaña
+                      </button>
+                    </div>
+                  ) : (
+                    publicidadList.map(pub => (
+                      <div key={pub.id} className="bg-dark-card border border-gray-800 rounded-2xl overflow-hidden group hover:border-gray-600 transition-colors flex flex-col">
+                        <div className="relative h-40 bg-gray-900 border-b border-gray-800">
+                          <img src={pub.image_url} alt={pub.cliente} className="w-full h-full object-cover" />
+                          <div className="absolute top-3 right-3 flex items-center gap-2">
+                            <button
+                              onClick={() => handleTogglePublicidadActiva(pub.id, pub.activa)}
+                              className={`px-2 py-1 rounded text-[10px] font-bold uppercase backdrop-blur-md border shadow-sm ${
+                                pub.activa 
+                                  ? 'bg-brand-emerald/80 text-white border-brand-emerald' 
+                                  : 'bg-gray-800/80 text-gray-300 border-gray-600'
+                              }`}
+                            >
+                              {pub.activa ? 'Activa' : 'Inactiva'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                          <h4 className="font-bold text-white text-sm mb-1">{pub.cliente}</h4>
+                          {pub.url_destino ? (
+                            <a href={pub.url_destino} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-blue hover:underline mb-4 truncate block">
+                              {pub.url_destino}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-gray-500 mb-4 italic">Sin URL de destino</p>
+                          )}
+                          
+                          <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-800/60">
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              {new Date(pub.creado_en).toLocaleDateString()}
+                            </span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleDeletePublicidad(pub.id, pub.image_url)}
+                                className="w-8 h-8 rounded-lg bg-red-900/20 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center transition-colors"
+                                title="Eliminar Publicidad"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
 
