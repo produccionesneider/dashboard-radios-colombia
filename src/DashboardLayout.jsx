@@ -446,11 +446,17 @@ export default function DashboardLayout() {
         activa: publicidadForm.activa
       }
 
-      const { error: insertError } = await supabase.from('publicidad').insert([newRecord])
-      if (insertError) throw insertError
-
-      setStatusFeedback('✅ ¡Publicidad agregada con éxito!')
-      setPublicidadForm({ cliente: '', url_destino: '', activa: true })
+      if (publicidadForm.id) {
+        const { error: updateError } = await supabase.from('publicidad').update(newRecord).eq('id', publicidadForm.id)
+        if (updateError) throw updateError
+        setStatusFeedback('¡Publicidad actualizada con éxito!')
+      } else {
+        const { error: insertError } = await supabase.from('publicidad').insert([newRecord])
+        if (insertError) throw insertError
+        setStatusFeedback('¡Publicidad agregada con éxito!')
+      }
+      
+      setPublicidadForm({ id: null, cliente: '', url_destino: '', activa: true })
       setPublicidadImage(null)
       setPublicidadPreview('')
       
@@ -1122,6 +1128,47 @@ export default function DashboardLayout() {
                 </div>
                 {!isSidebarCollapsed && <span className="truncate">Gestión de Usuarios</span>}
               </button>
+
+              {/* BOTÓN 7: AGREGAR PUBLICIDAD */}
+              <button
+                onClick={() => {
+                  setActiveTab('agregarPublicidad')
+                  setSelectedDepartmentView(null)
+                  setSelectedGestionDept(null)
+                  setSelectedEditarDept(null)
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  activeTab === 'agregarPublicidad'
+                    ? 'bg-gradient-to-r from-brand-blue to-blue-700 text-white shadow-lg shadow-brand-blue/20 font-bold'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                }`}
+              >
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Megaphone size={19} strokeWidth={2} />
+                </div>
+                {!isSidebarCollapsed && <span className="truncate">Agregar Publicidad</span>}
+              </button>
+
+              {/* BOTÓN 8: GESTIONAR PUBLICIDAD */}
+              <button
+                onClick={() => {
+                  setActiveTab('gestionarPublicidad')
+                  setSelectedDepartmentView(null)
+                  setSelectedGestionDept(null)
+                  setSelectedEditarDept(null)
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  activeTab === 'gestionarPublicidad'
+                    ? 'bg-gradient-to-r from-brand-blue to-blue-700 text-white shadow-lg shadow-brand-blue/20 font-bold'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                }`}
+              >
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <ImageIcon size={19} strokeWidth={2} />
+                </div>
+                {!isSidebarCollapsed && <span className="truncate">Gestionar Publicidad</span>}
+              </button>
+
             </nav>
           </div>
 
@@ -1422,7 +1469,7 @@ export default function DashboardLayout() {
                         Acciones Rápidas
                       </h3>
 
-                      <div className="grid grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                         <button
                           onClick={() => setActiveTab('agregar')}
                           className="p-3 bg-brand-blue/10 hover:bg-brand-blue/20 border border-brand-blue/30 rounded-xl text-left transition-colors group"
@@ -1439,6 +1486,15 @@ export default function DashboardLayout() {
                           <Building2 size={18} strokeWidth={2} className="text-gray-300 mb-1 group-hover:scale-110 transition-transform" />
                           <p className="text-xs font-bold text-white">Directorio</p>
                           <p className="text-[10px] text-gray-400">Por departamento</p>
+                        </button>
+
+                        <button
+                          onClick={() => setActiveTab('agregarPublicidad')}
+                          className="p-3 bg-gray-800/60 hover:bg-gray-800 border border-gray-700/80 rounded-xl text-left transition-colors group"
+                        >
+                          <Megaphone size={18} strokeWidth={2} className="text-brand-blue mb-1 group-hover:scale-110 transition-transform" />
+                          <p className="text-xs font-bold text-white">Publicidad</p>
+                          <p className="text-[10px] text-gray-400">Nueva campaña</p>
                         </button>
                       </div>
                     </div>
@@ -2473,7 +2529,7 @@ export default function DashboardLayout() {
                 <div>
                   <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
                     <Megaphone size={22} className="text-brand-blue" />
-                    <span>Agregar Publicidad</span>
+                    <span>{publicidadForm.id ? 'Editar Publicidad' : 'Agregar Publicidad'}</span>
                   </h2>
                   <p className="text-xs text-gray-400 mt-1">Sube imágenes publicitarias y configúralas para que aparezcan en el panel principal.</p>
                 </div>
